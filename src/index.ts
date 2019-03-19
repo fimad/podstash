@@ -14,6 +14,9 @@ const argv = yargs
   .option("feed-url", {
     describe: "the URL of the RSS/XML feed",
   })
+  .option("just-mp3", {
+    describe: "only update episode MP3 files",
+  })
   .command(
     "init",
     "initialize a podcast archive directory",
@@ -56,24 +59,35 @@ function addFeed(opts: any) {
       await db.newFeed(feedName, feedUrl);
       console.log(`Added podcast ${feedName} to archive.`);
     } catch (e) {
-      console.log(`Unable to add podcast: ${e}`);
+      console.log(`Unable to add podcast`, e);
     }
   })();
 }
 
 function updateFeeds(opts: any) {
   const archive: string = opts.archive;
+  const justMp3s: boolean = !!opts["just-mp3"];
   (async () => {
     const db = await DataBase.load(archive);
     try {
       const feeds = await db.feeds();
       await Promise.all(feeds.map(async (feed) => {
         console.log(`Updating ${feed.name}.`);
-        await feed.update();
+        try {
+          if (justMp3s) {
+            const channel = await feed.channel();
+            await feed.fetchAudio(channel);
+            await feed.saveFeed(channel);
+          } else {
+            // await feed.update();
+          }
+        } catch (e) {
+          console.log(`Error encountered updating ${feed.name}:`, e);
+        }
       }));
       console.log(`Finished updating feeds.`);
     } catch (e) {
-      console.log(`Error encountered updating feeds: ${e}`);
+      console.log(`Error encountered updating feeds:`, e);
     }
   })();
 }
@@ -84,11 +98,15 @@ function listFeeds(opts: any) {
     const db = await DataBase.load(archive);
     const feeds = await db.feeds();
     for (const feed of feeds) {
-      const channel = await feed.channel();
-      console.log(`${feed.name}`);
-      console.log(`\tTracked RSS: ${feed.url}`);
-      console.log(`\tLocal RSS: ${feed.localUrl}`);
-      console.log(`\tEpisodes: ${channel.items.length}`);
+      try {
+        const channel = await feed.channel();
+        console.log(`${feed.name}`);
+        console.log(`\tTracked RSS: ${feed.url}`);
+        console.log(`\tLocal RSS: ${feed.localUrl}`);
+        console.log(`\tEpisodes: ${channel.items.length}`);
+      } catch (e) {
+        console.log(`Unable to list ${feed.name}:`, e);
+      }
     }
   })();
 }

@@ -51,7 +51,7 @@ export default class Feed {
 
   public async fetchSnapshot(): Promise<any> {
     const snapshotPath = await this.nextSnapshotPath();
-    return download(this.url, snapshotPath);
+    return download(`${this.name} RSS feed`, this.url, snapshotPath);
   }
 
   public async channel(): Promise<rss.Channel> {
@@ -118,6 +118,7 @@ export default class Feed {
         await fsPromises.readdir(root, {withFileTypes: true} as any);
     const hashes = (dirents as unknown as fs.Dirent[])
         .filter((d) => d.isFile())
+        .filter((d) => !d.name.endsWith(".download"))
         .map((d) => d.name.split(".")[0]);
     const x: IdSet = {};
     hashes.forEach((hash) => { x[hash] = true; });
@@ -126,7 +127,10 @@ export default class Feed {
 
   private async fetchNextAudio(items: rss.Item[]) {
     for (const nextAudio of items) {
-      await download(nextAudio.enclosure.remoteUrl, nextAudio.enclosure.localPath);
+      await download(
+        `${this.name} - ${nextAudio.title}`,
+        nextAudio.enclosure.remoteUrl,
+        nextAudio.enclosure.localPath);
     }
   }
 
@@ -146,7 +150,12 @@ export default class Feed {
   }
 
   private hashGuid(guid: string) {
-    return crypto.createHash("sha1").update(guid).digest("hex");
+    try {
+      return crypto.createHash("sha1").update(guid.toString()).digest("hex");
+    } catch (e) {
+      console.log(`Unable to hash GUID ${guid}:`, e);
+      throw e;
+    }
   }
 
   private channelFromSnapshot(snapshot: any): rss.Channel {
@@ -171,7 +180,8 @@ export default class Feed {
   private itemsFromSnapshot(snapshot: any): rss.Item[] {
     return (snapshot.rss.channel.item || []).map((item: any) => {
       const ext = path.extname(item.enclosure["@_url"]);
-      const guidHash = this.hashGuid(item.guid["#text"]);
+      const guid = item.guid["#text"] || item.guid;
+      const guidHash = this.hashGuid(guid);
       const localName = `${guidHash}${ext}`;
       return {
         description: item.description,
@@ -181,7 +191,7 @@ export default class Feed {
           remoteUrl: item.enclosure["@_url"],
           type: item.enclosure["@_type"],
         },
-        guid: item.guid["#text"],
+        guid,
         link: item.link,
         pubDate: Date.parse(item.pubDate),
         title: item.title,

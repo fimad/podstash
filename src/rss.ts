@@ -28,6 +28,7 @@ export interface Channel {
 
 export function toXml(channel: Channel): string {
   const xmlOptions = {
+    cdataTagName: "__cdata",
     ignoreAttributes: false,
   };
   const parser = new xml.j2xParser(xmlOptions);
@@ -35,23 +36,39 @@ export function toXml(channel: Channel): string {
     rss: {
       "@_version": "2.0",
       "channel": {
-        description: channel.description,
+        description: {
+          __cdata: channel.description,
+        },
         items: channel.items.map((item) => ({
-          description: item.description,
+          description: {
+            __cdata: item.description,
+          },
           enclosure: {
             "@_type": item.enclosure.type,
             "@_url": item.enclosure.localUrl,
           },
-          guid: item.guid,
-          link: item.link,
+          guid: {
+            __cdata: item.guid,
+          },
+          link: {
+            __cdata: item.link,
+          },
           pubDate: new Date(item.pubDate || 0).toUTCString(),
-          title: item.title,
+          title: {
+            __cdata: item.title,
+          },
         })),
-        language: channel.language,
+        language: {
+          __cdata: channel.language,
+        },
         lastBuildDate: new Date(channel.lastBuildDate || 0).toUTCString(),
-        link: channel.link,
+        link: {
+          __cdata: channel.link,
+        },
         pubDate: new Date(channel.pubDate || 0).toUTCString(),
-        title: channel.title,
+        title: {
+          __cdata: channel.title,
+        },
       },
     },
   });
