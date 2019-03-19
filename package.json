@@ -4,6 +4,8 @@
     "@types/request": "^2.48.1",
     "@types/request-promise-native": "^1.0.15",
     "@types/yargs": "^12.0.9",
+    "nexe": "^2.0.0-rc.34",
+    "npm-run-all": "^4.1.5",
     "ts-node": "^8.0.3",
     "tslint": "^5.14.0",
     "typescript": "^3.3.3333"
@@ -21,6 +23,9 @@
     "yargs": "^13.2.2"
   },
   "scripts": {
-    "lint": "tslint --project . --fix"
+    "lint": "tslint --project . --fix",
+    "_build": "tsc",
+    "_nexe": "mkdir -p dist && nexe build/index.js -o dist/podstash",
+    "package": "run-s _build _nexe"
   }
 }
