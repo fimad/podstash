@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import { promises as fsPromises } from "fs";
+import Mustache from "mustache";
 import * as path from "path";
 import * as frequest from "request-promise-native";
 import Feed from "./feed";
@@ -21,6 +22,9 @@ export default class DataBase {
     await fsPromises.writeFile(baseUrlPath, baseUrl);
     return new DataBase(dbPath, baseUrl);
   }
+
+  private static readonly PATH_INDEX_HTML = "index.html";
+  private static readonly TEMPLATE = "templates/index.html";
 
   private static readonly PATH_BASE_URL = "base.url";
 
@@ -45,6 +49,7 @@ export default class DataBase {
     return fsPromises.readdir(this.path, {withFileTypes: true} as any)
         .then((dirents) => Promise.all((dirents as unknown as fs.Dirent[])
             .filter((d) => d.isDirectory())
+            .sort()
             .map((d) => Feed.load(this, d.name))));
   }
 
@@ -52,10 +57,25 @@ export default class DataBase {
     return Feed.create(this, name, url);
   }
 
-  private init(): Promise<DataBase> {
-    return fsPromises.mkdir(this.path, {recursive: true})
-        .then(() => fsPromises.stat(this.path))
-        .then(() => this);
+  public async updateHtml(): Promise<void> {
+    const template = await fsPromises.readFile(DataBase.TEMPLATE);
+    const channels = await Promise.all(
+      (await this.feeds()).map(async (feed) => ({
+        channel: await feed.channel(),
+        name: feed.name,
+      })));
+    const view = {
+      ...this.baseMustacheView(),
+      channels,
+    };
+    const inflated = Mustache.render(template.toString(), view);
+    await fsPromises.writeFile(this.dbPath(DataBase.PATH_INDEX_HTML), inflated);
+  }
+
+  public baseMustacheView() {
+    return {
+      baseUrl: this.baseUrl,
+    };
   }
 
   private dbPath(...subDirs: string[]) {

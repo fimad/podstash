@@ -83,6 +83,11 @@ function updateFeeds(opts: any) {
     } catch (e) {
       console.log(`Error encountered updating feeds:`, e);
     }
+    try {
+      db.updateHtml();
+    } catch (e) {
+      console.log(`Error encountered generating HTML:`, e);
+    }
   })();
 }
 

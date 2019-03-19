@@ -1,6 +1,7 @@
 import * as crypto from "crypto";
 import * as fs from "fs";
 import { promises as fsPromises } from "fs";
+import * as he from "he";
 import * as path from "path";
 import DataBase from "./db";
 import download from "./dl";
@@ -202,11 +203,11 @@ export default class Feed {
         (snapshot.rss.channel["itunes:image"] || {})["@_href"];
     let image;
     if (imageRemoteUrl) {
-      const localName = `${this.hash(imageRemoteUrl)}${path.extname(imageRemoteUrl)}`;
+      const localName = `${this.hash(imageRemoteUrl)}`;
       image = {
         localPath: this.feedPath(Feed.PATH_IMAGES, localName),
         localUrl: `${this.localUrlBase}/${Feed.PATH_IMAGES}/${localName}`,
-        remoteUrl: imageRemoteUrl,
+        remoteUrl: he.decode(imageRemoteUrl),
       };
     }
     return {
