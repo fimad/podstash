@@ -74,13 +74,7 @@ function updateFeeds(opts: any) {
       await Promise.all(feeds.map(async (feed) => {
         console.log(`Updating ${feed.name}.`);
         try {
-          if (justMp3s) {
-            const channel = await feed.channel();
-            await feed.fetchAudio(channel);
-            await feed.saveFeed(channel);
-          } else {
-            // await feed.update();
-          }
+          await feed.update(justMp3s);
         } catch (e) {
           console.log(`Error encountered updating ${feed.name}:`, e);
         }

@@ -32,6 +32,7 @@ export default class Feed {
 
   private static readonly PATH_AUDIO = "audio";
   private static readonly PATH_FEED_URL = "feed.url";
+  private static readonly PATH_IMAGES = "images";
   private static readonly PATH_RSS = "feed.xml";
   private static readonly PATH_SNAPSHOTS = "snapshots";
   public readonly name: string;
@@ -63,27 +64,14 @@ export default class Feed {
     return channel;
   }
 
-  public async update() {
-    await this.fetchSnapshot();
+  public async update(justMp3s = false) {
+    if (!justMp3s) {
+      await this.fetchSnapshot();
+    }
     const channel = await this.channel();
     await this.fetchAudio(channel);
+    await this.fetchImages(channel);
     await this.saveFeed(channel);
-  }
-
-  public async saveFeed(channel?: rss.Channel) {
-    channel = channel || await this.channel();
-    await fsPromises.writeFile(
-      this.feedPath(Feed.PATH_RSS),
-      rss.toXml(channel));
-  }
-
-  public async fetchAudio(channel?: rss.Channel) {
-    await fsPromises.mkdir(this.feedPath(Feed.PATH_AUDIO), {recursive: true});
-    channel = channel || await this.channel();
-    const guids = await this.guidHashes();
-    const items = await channel.items
-        .filter((item) => !guids[this.hashGuid(item.guid)]);
-    await this.fetchNextAudio(items);
   }
 
   public async snapshotPaths(): Promise<string[]> {
@@ -100,6 +88,39 @@ export default class Feed {
         .map((d) => d.name)
         .sort(compareSnapshotFiles)
         .map((name) => this.feedPath(Feed.PATH_SNAPSHOTS, name));
+  }
+
+  private async saveFeed(channel: rss.Channel) {
+    await fsPromises.writeFile(
+      this.feedPath(Feed.PATH_RSS),
+      rss.toXml(channel));
+  }
+
+  private async fetchImages(channel: rss.Channel) {
+    await fsPromises.mkdir(this.feedPath(Feed.PATH_IMAGES), {recursive: true});
+    if (!channel.image) {
+      return;
+    }
+
+    const imageExists = await fsPromises
+        .stat(channel.image.localPath)
+        .then(() => true, () => false);
+    if (imageExists) {
+      return;
+    }
+
+    await download(
+        `${this.name} cover art`,
+        channel.image.remoteUrl,
+        channel.image.localPath);
+  }
+
+  private async fetchAudio(channel: rss.Channel) {
+    await fsPromises.mkdir(this.feedPath(Feed.PATH_AUDIO), {recursive: true});
+    const guids = await this.guidHashes();
+    const items = await channel.items
+        .filter((item) => !guids[this.hash(item.guid)]);
+    await this.fetchNextAudio(items);
   }
 
   private async nextSnapshotPath(): Promise<string> {
@@ -149,7 +170,7 @@ export default class Feed {
     return filteredItems.sort(compareDates);
   }
 
-  private hashGuid(guid: string) {
+  private hash(guid: string) {
     try {
       return crypto.createHash("sha1").update(guid.toString()).digest("hex");
     } catch (e) {
@@ -166,6 +187,7 @@ export default class Feed {
         return 0;
       }
     };
+
     const itunesOwner = snapshot.rss.channel["itunes:owner"];
     let owner;
     if (itunesOwner && itunesOwner["itunes:name"] && itunesOwner["itunes:email"]) {
@@ -174,12 +196,24 @@ export default class Feed {
         name: itunesOwner["itunes:name"],
       };
     }
+
+    const imageRemoteUrl =
+        (snapshot.rss.channel.image || {}).url ||
+        (snapshot.rss.channel["itunes:image"] || {})["@_href"];
+    let image;
+    if (imageRemoteUrl) {
+      const localName = `${this.hash(imageRemoteUrl)}${path.extname(imageRemoteUrl)}`;
+      image = {
+        localPath: this.feedPath(Feed.PATH_IMAGES, localName),
+        localUrl: `${this.localUrlBase}/${Feed.PATH_IMAGES}/${localName}`,
+        remoteUrl: imageRemoteUrl,
+      };
+    }
     return {
       author: snapshot.rss.channel["itunes:author"],
       copyright: snapshot.rss.channel.copyright,
       description: snapshot.rss.channel.description,
-      image: (snapshot.rss.channel.image || {}).url ||
-             (snapshot.rss.channel["itunes:image"] || {})["@_href"],
+      image,
       items: [],
       language: snapshot.rss.channel.language,
       lastBuildDate: parseDate(snapshot.rss.channel.lastBuildDate),
@@ -194,7 +228,7 @@ export default class Feed {
     return (snapshot.rss.channel.item || []).map((item: any) => {
       const ext = path.extname(item.enclosure["@_url"]);
       const guid = item.guid["#text"] || item.guid;
-      const guidHash = this.hashGuid(guid);
+      const guidHash = this.hash(guid);
       const localName = `${guidHash}${ext}`;
       return {
         description: item.description,

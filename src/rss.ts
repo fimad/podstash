@@ -19,7 +19,11 @@ export interface Item {
 
 export interface Channel {
   description: string;
-  image: string;
+  image?: {
+    localPath: string;
+    localUrl: string;
+    remoteUrl: string;
+  };
   items: Item[];
   language: string;
   lastBuildDate: number;
@@ -99,10 +103,10 @@ export function toXml(channel: Channel): string {
       "image": {
         link: {__cdata: channel.link},
         title: {__cdata: channel.title},
-        url: {__cdata: channel.image},
+        url: {__cdata: channel.image.localUrl},
       },
       "itunes:image": {
-        "@_href": channel.image,
+        "@_href": channel.image.localUrl,
       },
     });
   }
