@@ -166,12 +166,25 @@ export default class Feed {
         return 0;
       }
     };
+    const itunesOwner = snapshot.rss.channel["itunes:owner"];
+    let owner;
+    if (itunesOwner && itunesOwner["itunes:name"] && itunesOwner["itunes:email"]) {
+      owner = {
+        email: itunesOwner["itunes:email"],
+        name: itunesOwner["itunes:name"],
+      };
+    }
     return {
+      author: snapshot.rss.channel["itunes:author"],
+      copyright: snapshot.rss.channel.copyright,
       description: snapshot.rss.channel.description,
+      image: (snapshot.rss.channel.image || {}).url ||
+             (snapshot.rss.channel["itunes:image"] || {})["@_href"],
       items: [],
       language: snapshot.rss.channel.language,
       lastBuildDate: parseDate(snapshot.rss.channel.lastBuildDate),
       link: snapshot.rss.channel.link,
+      owner,
       pubDate: parseDate(snapshot.rss.channel.pubDate),
       title: snapshot.rss.channel.title,
     };
@@ -186,6 +199,7 @@ export default class Feed {
       return {
         description: item.description,
         enclosure: {
+          length: item.enclosure["@_length"],
           localPath: this.feedPath(Feed.PATH_AUDIO, localName),
           localUrl: `${this.localUrlBase}/${Feed.PATH_AUDIO}/${localName}`,
           remoteUrl: item.enclosure["@_url"],
