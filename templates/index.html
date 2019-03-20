@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <style>
+body {
+  margin: 0px;
+  background: black;
+  color: #DDD;
+}
+
+h1 {
+  text-align: center;
+}
+
+.pod-list {
+  display: flex;
+  margin: auto;
+  max-width: 600px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pod {
+  margin: 0px;
+  line-height: 0px;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.pod .label {
+  position: relative;
+  z-index: 10;
+  background: rgba(0,0,0,.75);
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  line-height: 1.15em;
+}
+
+.pod .background {
+	position: absolute;
+  width: 200px;
+  height: 200px;
+}
+
+.pod img {
+	width: 100%;
+	height: 100%;
+}
+    </style>
+  </head>
+  <body>
+    <h1>Archived Podcasts</h1>
+    <div class="pod-list">
+      {{#channels}}
+      <div class="pod">
+        {{#channel.image}}
+        <div class="background">
+        <a href="{{baseUrl}}/{{name}}">
+          <img src="{{localUrl}}" />
+        </a>
+        </div>
+        {{/channel.image}}
+        <div class="label">{{channel.title}}</div>
+      </div>
+      {{/channels}}
+    </div>
+  </body>
+</html>

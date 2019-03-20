@@ -12,8 +12,10 @@ export interface Item {
   title: string;
   link: string;
   description: string;
-  enclosure: Enclosure;
+  descriptionHtml?: string;
+  enclosure: Enclosure; hasDescriptionHtml?: boolean;
   guid: string;
+  guidHash: string;
   pubDate: number;
 }
 
@@ -49,6 +51,7 @@ export function toXml(channel: Channel): string {
     rss: {
       "@_version": "2.0",
       "@_xmlns:atom": "http://www.w3.org/2005/Atom",
+      "@_xmlns:content": "http://purl.org/rss/1.0/modules/content/",
       "@_xmlns:googleplay": "http://www.google.com/schemas/play-podcasts/1.0",
       "@_xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd",
       "channel": {
@@ -58,23 +61,26 @@ export function toXml(channel: Channel): string {
         "generator": "podstash",
         "googleplay:block": "yes",
         "item": channel.items.map((item) => ({
-          description: {
+          "content:encoded": {
+            __cdata: item.descriptionHtml,
+          },
+          "description": {
             __cdata: item.description,
           },
-          enclosure: {
+          "enclosure": {
             "@_length": item.enclosure.length,
             "@_type": item.enclosure.type,
             "@_url": item.enclosure.localUrl,
           },
-          guid: {
+          "guid": {
             "@_isPermaLink": "false",
             "__cdata": item.guid,
           },
-          link: {
+          "link": {
             __cdata: item.link,
           },
-          pubDate: new Date(item.pubDate || 0).toUTCString(),
-          title: {
+          "pubDate": new Date(item.pubDate || 0).toUTCString(),
+          "title": {
             __cdata: item.title,
           },
         })),

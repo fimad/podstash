@@ -4,6 +4,7 @@ import Mustache from "mustache";
 import * as path from "path";
 import * as frequest from "request-promise-native";
 import Feed from "./feed";
+import * as rss from "./rss";
 
 export default class DataBase {
 
@@ -59,17 +60,21 @@ export default class DataBase {
 
   public async updateHtml(): Promise<void> {
     const template = await fsPromises.readFile(DataBase.TEMPLATE);
-    const channels = await Promise.all(
-      (await this.feeds()).map(async (feed) => ({
-        channel: await feed.channel(),
-        name: feed.name,
-      })));
+    const feeds = await this.feeds();
+    const feedsAndChannels: Array<[Feed, rss.Channel]> = await Promise.all(
+      feeds.map(async (feed) => [feed, await feed.channel()] as [Feed, rss.Channel]));
+    const channels = feedsAndChannels.map(([feed, channel]) => ({
+      channel,
+      name: feed.name,
+    }));
     const view = {
       ...this.baseMustacheView(),
       channels,
     };
     const inflated = Mustache.render(template.toString(), view);
     await fsPromises.writeFile(this.dbPath(DataBase.PATH_INDEX_HTML), inflated);
+    await Promise.all(
+        feedsAndChannels.map(([feed, channel]) => feed.updateHtml(channel)));
   }
 
   public baseMustacheView() {

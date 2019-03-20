@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <style>
+
+body {
+  margin: 0px;
+  background: black;
+  color: #DDD;
+}
+
+.pod {
+    margin: auto;
+    max-width: 800px;
+}
+
+.header {
+    display: grid;
+
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto auto;
+
+    grid-template-areas:
+        "poster      poster"
+        "title       feed"
+        "description description";
+
+    overflow: hidden;
+}
+
+.pod .header .title {
+    grid-area: title;
+    background-color: #222;
+    padding: .5em;
+    font-size: 28px;
+}
+
+.pod .header .description {
+    grid-area: description;
+    background-color: #333;
+    padding: 1em;
+    font-size: 18px;
+    display: none;
+}
+
+.pod .header .feed {
+    grid-area: feed;
+    background-color: #222;
+    font-size: 22px;
+    text-align: right;
+    padding: .5em;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.feed a {
+    color: #DDD;
+}
+
+.header .back-link a {
+    color: #ddd;
+    text-decoration: none; margin-right: 8px;
+}
+
+.poster {
+    grid-area: poster;
+    overflow: hidden;
+    max-height: 300px;
+    height: 33vh;
+    background-position-y: center;
+    background-size: cover;
+}
+
+.episode-list {
+    display: flex;
+    flex-direction: column;
+    padding-top: 16px;
+}
+
+.episode {
+    margin-top: 16px;
+    margin-bottom: 16px;
+    color: black;
+    display: grid;
+    grid-template-rows: auto auto auto;
+    grid-template-columns: auto 25%;
+    grid-template-areas:
+        "title       link"
+        "description description"
+        "audio       audio";
+    background-color: #FFF;
+}
+
+.episode .title {
+    grid-area: title;
+    padding: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #EEE;
+}
+
+.episode .link {
+    grid-area: link;
+    padding: 8px;
+    text-align: right;
+    font-size: 18px;
+    background-color: #EEE;
+    width: content;
+}
+
+.episode .link a {
+  color: #111;
+  text-decoration: none;
+}
+
+.episode .description {
+    grid-area: description;
+    padding: 1em;
+}
+
+.episode .description img {
+    max-width: 50%;
+    max-height: 50%;
+}
+
+.episode .audio {
+    grid-area: audio;
+}
+
+.episode .audio audio {
+    width: 100%;
+}
+    </style>
+  </head>
+  <body>
+    <div class="pod">
+      <div class="header">
+        <div class="title">
+          <span class="back-link">
+            <a href="{{baseUrl}}">&#x2B05;</a>
+          </span>
+          {{channel.title}}
+        </div>
+        <div class="description">{{{channel.description}}}</div>
+        <div class="feed">
+          <a href="{{feedUrl}}">RSS Feed</a>
+        </div>
+        <div class="poster" style="background-image: url({{channel.image.localUrl}})">
+        </div>
+      </div>
+
+      <div class="episode-list">
+        {{#channel.items}}
+        <div class="episode" id="{{guidHash}}">
+          <div class="title">{{title}}</div>
+          <div class="link"><a href="#{{guidHash}}">&#128279;</a></div>
+          <div class="description">
+            {{description}}
+          </div>
+          <div class="audio">
+            <audio preload="none" controls>
+              <source src="{{enclosure.localUrl}}">
+            </audio>
+          </div>
+        </div>
+        {{/channel.items}}
+      </div>
+    </div>
+  </body>
+</html>

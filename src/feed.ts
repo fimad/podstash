@@ -2,6 +2,7 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import { promises as fsPromises } from "fs";
 import * as he from "he";
+import Mustache from "mustache";
 import * as path from "path";
 import DataBase from "./db";
 import download from "./dl";
@@ -34,8 +35,11 @@ export default class Feed {
   private static readonly PATH_AUDIO = "audio";
   private static readonly PATH_FEED_URL = "feed.url";
   private static readonly PATH_IMAGES = "images";
+  private static readonly PATH_INDEX_HTML = "index.html";
   private static readonly PATH_RSS = "feed.xml";
   private static readonly PATH_SNAPSHOTS = "snapshots";
+  private static readonly TEMPLATE = "templates/feed.html";
+
   public readonly name: string;
   public readonly url: string;
   public readonly localUrl: string;
@@ -49,6 +53,26 @@ export default class Feed {
     this.url = url;
     this.localUrlBase = `${db.baseUrl}/${this.name}`;
     this.localUrl = `${this.localUrlBase}/${Feed.PATH_RSS}`;
+  }
+
+  public async updateHtml(channel?: rss.Channel): Promise<void> {
+    channel = channel || await this.channel();
+    const template = await fsPromises.readFile(Feed.TEMPLATE);
+    const view = {
+      ...this.baseMustacheView(),
+      channel,
+    };
+    const inflated = Mustache.render(template.toString(), view);
+    await fsPromises.writeFile(this.feedPath(Feed.PATH_INDEX_HTML), inflated);
+  }
+
+  public baseMustacheView() {
+    return {
+      ...this.db.baseMustacheView(),
+      feedBaseUrl: this.localUrlBase,
+      feedUrl: this.localUrl,
+      name: this.name,
+    };
   }
 
   public async fetchSnapshot(): Promise<any> {
@@ -233,6 +257,7 @@ export default class Feed {
       const localName = `${guidHash}${ext}`;
       return {
         description: item.description,
+        descriptionHtml: item["content:encoded"],
         enclosure: {
           length: item.enclosure["@_length"],
           localPath: this.feedPath(Feed.PATH_AUDIO, localName),
@@ -241,6 +266,8 @@ export default class Feed {
           type: item.enclosure["@_type"],
         },
         guid,
+        guidHash,
+        hasDescriptionHtml: !!item["content:encoded"],
         link: item.link,
         pubDate: Date.parse(item.pubDate),
         title: item.title,
