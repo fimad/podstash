@@ -59,7 +59,9 @@ export default class DataBase {
   }
 
   public async updateHtml(): Promise<void> {
-    const template = await fsPromises.readFile(DataBase.TEMPLATE);
+    // nexe does not support the promise APIs. Read synchronously as a
+    // workaround instead.
+    const template = fs.readFileSync(DataBase.TEMPLATE);
     const feeds = await this.feeds();
     const feedsAndChannels: Array<[Feed, rss.Channel]> = await Promise.all(
       feeds.map(async (feed) => [feed, await feed.channel()] as [Feed, rss.Channel]));

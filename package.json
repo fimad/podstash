@@ -29,7 +29,7 @@
   "scripts": {
     "lint": "tslint --project . --fix",
     "_build": "tsc",
-    "_nexe": "mkdir -p dist && nexe build/index.js -o dist/podstash",
+    "_nexe": "mkdir -p dist && nexe build/index.js -o dist/podstash -r \"templates/*.html\"",
     "package": "run-s _build _nexe"
   }
 }

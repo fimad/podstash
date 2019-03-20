@@ -57,7 +57,9 @@ export default class Feed {
 
   public async updateHtml(channel?: rss.Channel): Promise<void> {
     channel = channel || await this.channel();
-    const template = await fsPromises.readFile(Feed.TEMPLATE);
+    // nexe does not support the promise APIs. Read synchronously as a
+    // workaround instead.
+    const template = fs.readFileSync(Feed.TEMPLATE);
     const view = {
       ...this.baseMustacheView(),
       channel,
