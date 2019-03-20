@@ -14,9 +14,16 @@ async function performDownloads(name: string, url: string, path: string): Promis
   const tmpPath = `${path}.download`;
   const promise = new Promise((resolve, reject) => {
     console.log(`Downloading ${name}\n\t${url.trim()}`);
-    const pipe = request.get(url).pipe(fs.createWriteStream(tmpPath));
-    pipe.on("finish", resolve);
-    pipe.on("error", reject);
+    const pipe = request.get({url, headers: {"User-Agent": "podstash"}})
+      .on("error", reject)
+      .on("response", (response) => {
+        if (response.statusCode < 200 || 399 < response.statusCode) {
+          reject(new Error(`Unable to fetch audio: ${response.statusCode}`));
+        }
+      })
+      .pipe(fs.createWriteStream(tmpPath))
+      .on("finish", resolve)
+      .on("error", reject);
   });
   return promise.then(() => fsPromises.rename(tmpPath, path));
 }

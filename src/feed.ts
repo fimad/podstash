@@ -172,11 +172,19 @@ export default class Feed {
   }
 
   private async fetchNextAudio(items: rss.Item[]) {
-    for (const nextAudio of items) {
+    // When fetching multiple MP3 files, add a small delay between fetches so as
+    // to not appear to be overzealous in our fetching.
+    const smallDelay = async () =>
+        await new Promise((resolve) => setTimeout(resolve, 30000));
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (i > 0) {
+        await smallDelay();
+      }
       await download(
-        `${this.name} - ${nextAudio.title}`,
-        nextAudio.enclosure.remoteUrl,
-        nextAudio.enclosure.localPath);
+        `${this.name} - ${item.title}`,
+        item.enclosure.remoteUrl,
+        item.enclosure.localPath);
     }
   }
 
