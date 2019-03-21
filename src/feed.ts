@@ -79,12 +79,26 @@ export default class Feed {
 
   public async fetchSnapshot(): Promise<any> {
     const snapshotPath = await this.nextSnapshotPath();
-    return download(`${this.name} RSS feed`, this.url, snapshotPath);
+    // Used as the validator to only save snapshots if the provide new unique
+    // content. This prevents the explosion of saved snapshots and allows for
+    // snapshots to be fetched at frequent intervals.
+    const isNewSnapshot = async (tmpPath: string) => {
+      const hash = (s: rss.Channel) => this.channelHash(s);
+      const oldHashes = (await this.snapshotChannels()).map(hash);
+      const newHash = await fsPromises.readFile(tmpPath)
+          .then((s) => hash(this.channelFromSnapshot(s.toString())));
+      return oldHashes.filter((oldHash) => oldHash === newHash).length === 0;
+    };
+    const isNew = await download(
+        `${this.name} RSS feed`, this.url, snapshotPath, isNewSnapshot);
+    if (isNew) {
+      console.log(`Change detected in RSS feed of ${this.name}.`);
+    }
   }
 
   public async channel(): Promise<rss.Channel> {
-    const snapshots = await this.snapshots();
-    const channel = this.channelFromSnapshot(snapshots[0]);
+    const snapshots = await this.snapshotXmls();
+    const channel = this.channelMetaFromSnapshot(snapshots[0]);
     const allItems = ([] as rss.Item[]).concat(
         ...snapshots.map((x) => this.itemsFromSnapshot(x)));
     channel.items = this.uniquifyItems(allItems);
@@ -113,6 +127,7 @@ export default class Feed {
     return (dirents as unknown as fs.Dirent[])
         .filter((d) => d.isFile())
         .map((d) => d.name)
+        .filter((name) => !name.endsWith(".download"))
         .sort(compareSnapshotFiles)
         .map((name) => this.feedPath(Feed.PATH_SNAPSHOTS, name));
   }
@@ -214,7 +229,7 @@ export default class Feed {
     }
   }
 
-  private channelFromSnapshot(snapshot: any): rss.Channel {
+  private channelMetaFromSnapshot(snapshot: any): rss.Channel {
     const parseDate = (date: string) => {
       try {
         return Date.parse(date);
@@ -285,11 +300,30 @@ export default class Feed {
     });
   }
 
-  private snapshots(): Promise<any[]> {
+  private channelHash(channel: rss.Channel): string {
+    return this.hash(channel.items.map((item) => item.guidHash).join(":"));
+  }
+
+  private channelFromSnapshot(snapshot: string): rss.Channel {
+    const xml = rss.fromXml(snapshot);
+    return {
+      ...this.channelMetaFromSnapshot(xml),
+      items: this.itemsFromSnapshot(xml),
+    };
+  }
+
+  private async snapshotChannels(): Promise<rss.Channel[]> {
+    return (await this.snapshots()).map((s) => this.channelFromSnapshot(s));
+  }
+
+  private async snapshotXmls(): Promise<any[]> {
+    return (await this.snapshots()).map(rss.fromXml);
+  }
+
+  private async snapshots(): Promise<string[]> {
     const readSnapshot = (snapshotPath: string) =>
         fsPromises.readFile(snapshotPath)
-            .then((x) => x.toString())
-            .then(rss.fromXml);
+            .then((x) => x.toString());
     return this.snapshotPaths()
         .then((paths) => Promise.all(paths.map(readSnapshot)));
   }
