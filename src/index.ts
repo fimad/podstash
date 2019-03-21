@@ -1,5 +1,5 @@
 import yargs from "yargs";
-import DataBase from "./db";
+import Archive from "./archive";
 
 const argv = yargs
   .option("archive", {
@@ -41,22 +41,22 @@ const argv = yargs
   .argv;
 
 function init(opts: any) {
-  const archive: string = opts.archive;
+  const archivePath: string = opts.archive;
   const baseUrl: string = opts["base-url"];
   (async () => {
-    const db = await DataBase.create(archive, baseUrl);
+    const archive = await Archive.create(archivePath, baseUrl);
     console.log(`Initialized podcast archive under ${archive}`);
   })();
 }
 
 function addFeed(opts: any) {
-  const archive: string = opts.archive;
+  const archivePath: string = opts.archive;
   const feedUrl: string = opts["feed-url"];
   const feedName: string = opts["feed-name"];
   (async () => {
-    const db = await DataBase.load(archive);
+    const archive = await Archive.load(archivePath);
     try {
-      await db.newFeed(feedName, feedUrl);
+      await archive.newFeed(feedName, feedUrl);
       console.log(`Added podcast ${feedName} to archive.`);
     } catch (e) {
       console.log(`Unable to add podcast`, e);
@@ -65,12 +65,12 @@ function addFeed(opts: any) {
 }
 
 function updateFeeds(opts: any) {
-  const archive: string = opts.archive;
+  const archivePath: string = opts.archive;
   const justMp3s: boolean = !!opts["just-mp3"];
   (async () => {
-    const db = await DataBase.load(archive);
+    const archive = await Archive.load(archivePath);
     try {
-      const feeds = await db.feeds();
+      const feeds = await archive.feeds();
       await Promise.all(feeds.map(async (feed) => {
         console.log(`Updating ${feed.name}.`);
         try {
@@ -84,7 +84,7 @@ function updateFeeds(opts: any) {
       console.log(`Error encountered updating feeds:`, e);
     }
     try {
-      db.updateHtml();
+      archive.updateHtml();
     } catch (e) {
       console.log(`Error encountered generating HTML:`, e);
     }
@@ -92,13 +92,13 @@ function updateFeeds(opts: any) {
 }
 
 function listFeeds(opts: any) {
-  const archive: string = opts.archive;
+  const archivePath: string = opts.archive;
   (async () => {
-    const db = await DataBase.load(archive);
-    const feeds = await db.feeds();
+    const archive = await Archive.load(archivePath);
+    const feeds = await archive.feeds();
     for (const feed of feeds) {
       try {
-        const channel = await feed.channel();
+        const channel = await feed.generatedChannel();
         console.log(`${feed.name}`);
         console.log(`\tTracked RSS: ${feed.url}`);
         console.log(`\tLocal RSS: ${feed.localUrl}`);
