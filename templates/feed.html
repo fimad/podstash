@@ -13,104 +13,104 @@ body {
 }
 
 .pod {
-    margin: auto;
-    max-width: 800px;
+  margin: auto;
+  max-width: 800px;
 }
 
 .header {
-    display: grid;
+  display: grid;
 
-    grid-template-columns: auto auto;
-    grid-template-rows: auto auto auto;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto auto;
 
-    grid-template-areas:
-        "poster      poster"
-        "title       feed"
-        "description description";
+  grid-template-areas:
+      "poster      poster"
+      "title       feed"
+      "description description";
 
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .pod .header .title {
-    grid-area: title;
-    background-color: #222;
-    padding: .5em;
-    font-size: 28px;
+  grid-area: title;
+  background-color: #222;
+  padding: .5em;
+  font-size: 28px;
 }
 
 .pod .header .description {
-    grid-area: description;
-    background-color: #333;
-    padding: 1em;
-    font-size: 18px;
-    display: none;
+  grid-area: description;
+  background-color: #333;
+  padding: 1em;
+  font-size: 18px;
+  display: none;
 }
 
 .pod .header .feed {
-    grid-area: feed;
-    background-color: #222;
-    font-size: 22px;
-    text-align: right;
-    padding: .5em;
+  grid-area: feed;
+  background-color: #222;
+  font-size: 22px;
+  text-align: right;
+  padding: .5em;
 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .feed a {
-    color: #DDD;
+  color: #DDD;
 }
 
 .header .back-link a {
-    color: #ddd;
-    text-decoration: none; margin-right: 8px;
+  color: #ddd;
+  text-decoration: none; margin-right: 8px;
 }
 
 .poster {
-    grid-area: poster;
-    overflow: hidden;
-    max-height: 300px;
-    height: 33vh;
-    background-position-y: center;
-    background-size: cover;
+  grid-area: poster;
+  overflow: hidden;
+  max-height: 300px;
+  height: 33vh;
+  background-position-y: center;
+  background-size: cover;
 }
 
 .episode-list {
-    display: flex;
-    flex-direction: column;
-    padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  padding-top: 16px;
 }
 
 .episode {
-    margin-top: 16px;
-    margin-bottom: 16px;
-    color: black;
-    display: grid;
-    grid-template-rows: auto auto auto;
-    grid-template-columns: auto 25%;
-    grid-template-areas:
-        "title       link"
-        "description description"
-        "audio       audio";
-    background-color: #FFF;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  color: black;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  grid-template-columns: auto 25%;
+  grid-template-areas:
+      "title       link"
+      "description description"
+      "audio       audio";
+  background-color: #FFF;
 }
 
 .episode .title {
-    grid-area: title;
-    padding: 8px;
-    font-size: 18px;
-    font-weight: bold;
-    background-color: #EEE;
+  grid-area: title;
+  padding: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: #EEE;
 }
 
 .episode .link {
-    grid-area: link;
-    padding: 8px;
-    text-align: right;
-    font-size: 18px;
-    background-color: #EEE;
-    width: content;
+  grid-area: link;
+  padding: 8px;
+  text-align: right;
+  font-size: 18px;
+  background-color: #EEE;
+  width: content;
 }
 
 .episode .link a {
@@ -119,21 +119,21 @@ body {
 }
 
 .episode .description {
-    grid-area: description;
-    padding: 1em;
+  grid-area: description;
+  padding: 1em;
 }
 
 .episode .description img {
-    max-width: 50%;
-    max-height: 50%;
+  max-width: 50%;
+  max-height: 50%;
 }
 
 .episode .audio {
-    grid-area: audio;
+  grid-area: audio;
 }
 
 .episode .audio audio {
-    width: 100%;
+  width: 100%;
 }
     </style>
   </head>
