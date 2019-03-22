@@ -71,7 +71,6 @@ export default class Archive {
       withArchive: (archive: Archive) => Promise<any>) {
     await fsPromises.mkdir(dbPath, {recursive: true});
     await fsPromises.stat(dbPath);
-    const lockPath = path.join(dbPath, Archive.PATH_LOCK_FILE);
     try {
       const release = await lockfile.lock(dbPath);
       try {
