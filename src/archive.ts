@@ -2,6 +2,7 @@ import * as fs from "fs";
 import { promises as fsPromises } from "fs";
 import Mustache from "mustache";
 import * as path from "path";
+import * as lockfile from "proper-lockfile";
 import * as frequest from "request-promise-native";
 import Feed from "./feed";
 import * as rss from "./rss";
@@ -22,21 +23,29 @@ import * as rss from "./rss";
 export default class Archive {
 
   /** Loads an archive from disk. */
-  public static async load(dbPath: string): Promise<Archive> {
+  public static async load(
+      dbPath: string,
+      withArchive: (archive: Archive) => Promise<any>) {
     const baseUrlPath = path.join(dbPath, Archive.PATH_BASE_URL);
-    await fsPromises.mkdir(dbPath, {recursive: true});
-    await fsPromises.stat(dbPath);
-    const baseUrl = await fsPromises.readFile(baseUrlPath);
-    return new Archive(dbPath, baseUrl.toString());
+    Archive.doWithLockedArchive(
+        dbPath,
+        () => fsPromises.readFile(baseUrlPath).then((x) => x.toString()),
+        withArchive);
   }
 
   /** Creates a new archive on disk. */
-  public static async create(dbPath: string, baseUrl: string): Promise<Archive> {
+  public static async create(
+      dbPath: string,
+      baseUrl: string,
+      withArchive: (archive: Archive) => Promise<any>) {
     const baseUrlPath = path.join(dbPath, Archive.PATH_BASE_URL);
-    await fsPromises.mkdir(dbPath, {recursive: true});
-    await fsPromises.stat(dbPath);
-    await fsPromises.writeFile(baseUrlPath, baseUrl);
-    return new Archive(dbPath, baseUrl);
+    Archive.doWithLockedArchive(
+        dbPath,
+        async () => {
+          await fsPromises.writeFile(baseUrlPath, baseUrl);
+          return baseUrl;
+        },
+        withArchive);
   }
 
   /**
@@ -55,6 +64,28 @@ export default class Archive {
    * archive index HTML file.
    */
   private static readonly TEMPLATE = "templates/index.html";
+
+  private static async doWithLockedArchive(
+      dbPath: string,
+      getBaseUrl: () => Promise<string>,
+      withArchive: (archive: Archive) => Promise<any>) {
+    await fsPromises.mkdir(dbPath, {recursive: true});
+    await fsPromises.stat(dbPath);
+    const lockPath = path.join(dbPath, Archive.PATH_LOCK_FILE);
+    try {
+      const release = await lockfile.lock(dbPath);
+      try {
+        const baseUrl = await getBaseUrl();
+        await withArchive(new Archive(dbPath, baseUrl.toString()));
+      } finally {
+        await release();
+      }
+    } catch (e) {
+      console.log("Unable to acquire lock on archive.");
+      console.log("Is another instance running?");
+      throw(e);
+    }
+  }
 
   /**
    * The path under which podcasts and their associated meta data will be

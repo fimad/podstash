@@ -43,32 +43,29 @@ const argv = yargs
 function init(opts: any) {
   const archivePath: string = opts.archive;
   const baseUrl: string = opts["base-url"];
-  (async () => {
-    const archive = await Archive.create(archivePath, baseUrl);
+  Archive.create(archivePath, baseUrl, async (archive: Archive) => {
     console.log(`Initialized podcast archive under ${archive}`);
-  })();
+  });
 }
 
 function addFeed(opts: any) {
   const archivePath: string = opts.archive;
   const feedUrl: string = opts["feed-url"];
   const feedName: string = opts["feed-name"];
-  (async () => {
-    const archive = await Archive.load(archivePath);
+  Archive.load(archivePath, async (archive: Archive) => {
     try {
       await archive.newFeed(feedName, feedUrl);
       console.log(`Added podcast ${feedName} to archive.`);
     } catch (e) {
       console.log(`Unable to add podcast`, e);
     }
-  })();
+  });
 }
 
 function updateFeeds(opts: any) {
   const archivePath: string = opts.archive;
   const justMp3s: boolean = !!opts["just-mp3"];
-  (async () => {
-    const archive = await Archive.load(archivePath);
+  Archive.load(archivePath, async (archive: Archive) => {
     try {
       const feeds = await archive.feeds();
       await Promise.all(feeds.map(async (feed) => {
@@ -88,13 +85,12 @@ function updateFeeds(opts: any) {
     } catch (e) {
       console.log(`Error encountered generating HTML:`, e);
     }
-  })();
+  });
 }
 
 function listFeeds(opts: any) {
   const archivePath: string = opts.archive;
-  (async () => {
-    const archive = await Archive.load(archivePath);
+  Archive.load(archivePath, async (archive: Archive) => {
     const feeds = await archive.feeds();
     for (const feed of feeds) {
       try {
@@ -107,5 +103,5 @@ function listFeeds(opts: any) {
         console.log(`Unable to list ${feed.name}:`, e);
       }
     }
-  })();
+  });
 }
