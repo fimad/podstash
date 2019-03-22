@@ -28,10 +28,13 @@
     "request-promise-native": "^1.0.7",
     "yargs": "^13.2.2"
   },
+  "bin": {
+    "podstash": "./dist/podstash"
+  },
   "scripts": {
     "lint": "tslint --project . --fix",
     "_build": "tsc",
     "_nexe": "mkdir -p dist && nexe build/index.js -o dist/podstash -r \"templates/*.html\"",
-    "package": "run-s _build _nexe"
+    "build": "run-s _build _nexe"
   }
 }
