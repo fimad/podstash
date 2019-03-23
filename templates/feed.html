@@ -20,15 +20,34 @@ body {
 .header {
   display: grid;
 
-  grid-template-columns: auto auto;
+  grid-template-columns: 3em auto auto;
   grid-template-rows: auto auto auto;
 
   grid-template-areas:
-      "poster      poster"
-      "title       feed"
-      "description description";
+      "poster      poster      poster"
+      "back-link   title       feed"
+      "description description description";
 
   overflow: hidden;
+  background-color: #222;
+}
+
+.header .back-link {
+  grid-area: back-link;
+  padding: .5em;
+  font-size: 28px;
+  margin-right: 8px;
+  padding: .5em;
+  font-size: 28px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.header .back-link a {
+  color: #ddd;
+  text-decoration: none;
 }
 
 .pod .header .title {
@@ -60,11 +79,6 @@ body {
 
 .feed a {
   color: #DDD;
-}
-
-.header .back-link a {
-  color: #ddd;
-  text-decoration: none; margin-right: 8px;
 }
 
 .poster {
@@ -140,10 +154,10 @@ body {
   <body>
     <div class="pod">
       <div class="header">
+        <div class="back-link">
+          <a href="{{baseUrl}}">&#x2B05;</a>
+        </div>
         <div class="title">
-          <span class="back-link">
-            <a href="{{baseUrl}}">&#x2B05;</a>
-          </span>
           {{channel.title}}
         </div>
         <div class="description">{{{channel.description}}}</div>
