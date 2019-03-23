@@ -1,6 +1,6 @@
-import * as crypto from "crypto";
+import { createHash } from "crypto";
 import * as fs from "fs";
-import { promises as fsPromises } from "fs";
+import * as fsPromises from "fs-extra";
 import * as he from "he";
 import Mustache from "mustache";
 import * as path from "path";
@@ -58,7 +58,7 @@ export default class Feed {
         .then(
           () => {throw new Error((`Feed ${name} already exists`)); },
           () => null);
-    await fsPromises.mkdir(feedPath);
+    await fsPromises.ensureDir(feedPath);
     await fsPromises.writeFile(urlFile, url);
     return new Feed(db, name, url);
   }
@@ -214,8 +214,7 @@ export default class Feed {
   }
 
   private async nextSnapshotPath(): Promise<string> {
-    await fsPromises
-        .mkdir(this.feedPath(Feed.PATH_SNAPSHOTS), {recursive: true});
+    await fsPromises.ensureDir(this.feedPath(Feed.PATH_SNAPSHOTS));
     return this.feedPath(Feed.PATH_SNAPSHOTS, `${Date.now()}.xml`);
   }
 
@@ -235,7 +234,7 @@ export default class Feed {
   }
 
   private async fetchImages(channel: rss.Channel) {
-    await fsPromises.mkdir(this.feedPath(Feed.PATH_IMAGES), {recursive: true});
+    await fsPromises.ensureDir(this.feedPath(Feed.PATH_IMAGES));
     if (!channel.image) {
       return;
     }
@@ -254,7 +253,7 @@ export default class Feed {
   }
 
   private async fetchAudio(channel: rss.Channel) {
-    await fsPromises.mkdir(this.feedPath(Feed.PATH_AUDIO), {recursive: true});
+    await fsPromises.ensureDir(this.feedPath(Feed.PATH_AUDIO));
     const guids = await this.existingGuidHashes();
     const items = await channel.items
         .filter((item) => !guids[this.hash(item.guid)]);
@@ -291,7 +290,7 @@ export default class Feed {
 
   private hash(guid: string) {
     try {
-      return crypto.createHash("sha1").update(guid.toString()).digest("hex");
+      return createHash("sha1").update(guid.toString()).digest("hex");
     } catch (e) {
       console.log(`Unable to hash GUID ${guid}:`, e);
       throw e;

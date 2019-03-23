@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { promises as fsPromises } from "fs";
+import * as fsPromises from "fs-extra";
 import Mustache from "mustache";
 import * as path from "path";
 import * as lockfile from "proper-lockfile";
@@ -69,7 +69,7 @@ export default class Archive {
       dbPath: string,
       getBaseUrl: () => Promise<string>,
       withArchive: (archive: Archive) => Promise<any>) {
-    await fsPromises.mkdir(dbPath, {recursive: true});
+    await fsPromises.ensureDir(dbPath);
     await fsPromises.stat(dbPath);
     try {
       const release = await lockfile.lock(dbPath);
@@ -105,8 +105,8 @@ export default class Archive {
 
   /** Return a list of feeds in the archive. */
   public feeds(): Promise<Feed[]> {
-    return fsPromises.readdir(this.path, {withFileTypes: true} as any)
-        .then((dirents) => Promise.all((dirents as unknown as fs.Dirent[])
+    return ((fsPromises.readdir as any)(this.path, {withFileTypes: true}))
+        .then((dirents: fs.Dirent[]) => Promise.all(dirents
             .filter((d) => d.isDirectory())
             .sort()
             .map((d) => Feed.load(this, d.name))));
