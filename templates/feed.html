@@ -148,9 +148,17 @@ body {
   padding: 1em;
 }
 
+.episode .description p:first-child {
+  margin-block-start: 0em;
+}
+
+.episode .description p:last-of-type {
+  margin-block-end: 0em;
+}
+
 .episode .description img {
-  max-width: 50%;
-  max-height: 50%;
+  max-width: 50vh;
+  max-height: 50vw;
 }
 
 .episode .audio {
@@ -186,7 +194,7 @@ body {
           <div class="date">{{pubDateAsString}}</div>
           <div class="link"><a href="#{{guidHash}}">&#128279;</a></div>
           <div class="description">
-            {{description}}
+            {{{description}}}
           </div>
           <div class="audio">
             <audio preload="none" controls>

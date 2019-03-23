@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as fsPromises from "fs-extra";
 import * as he from "he";
 import Mustache from "mustache";
+import * as parse5 from "parse5";
 import * as path from "path";
 import Archive from "./archive";
 import download from "./dl";
@@ -51,7 +52,8 @@ export default class Feed {
   }
 
   /** Creates a new feed in the archive that tracks a given URL. */
-  public static async create(db: Archive, name: string, url: string): Promise<Feed> {
+  public static async create(
+      db: Archive, name: string, url: string): Promise<Feed> {
     const feedPath = path.join(db.path, name);
     const urlFile = path.join(db.path, name, Feed.PATH_FEED_URL);
     await fsPromises.stat(feedPath)
@@ -142,9 +144,10 @@ export default class Feed {
     if (!justMp3s) {
       await this.fetchSnapshot();
     }
-    const channel = await this.generatedChannel();
+    const images: rss.Image[] = [];
+    const channel = await this.generatedChannel(images);
     await this.fetchAudio(channel);
-    await this.fetchImages(channel);
+    await this.fetchImages(images);
     await this.saveFeed(channel);
   }
 
@@ -153,14 +156,77 @@ export default class Feed {
    *
    * The generated channel includes episodes from all of the locally cached feed
    * snapshots.
+   *
+   * Takes an optional argument which accumulates images referenced in the
+   * generated channel.
    */
-  public async generatedChannel(): Promise<rss.Channel> {
+  public async generatedChannel(
+      maybeImages?: rss.Image[]): Promise<rss.Channel> {
     const snapshots = await this.xmlSnapshots();
     const channel = this.channelMetaFromSnapshot(snapshots[0]);
     const allItems = ([] as rss.Item[]).concat(
         ...snapshots.map((x) => this.itemsFromSnapshot(x)));
     channel.items = this.uniquifyItems(allItems);
+    const images = maybeImages || [];
+    if (channel.image) {
+      images.push(channel.image);
+    }
+    channel.items.forEach((item) => {
+      item.description = this.sanitizeHtml(item.description, images);
+    });
     return channel;
+  }
+
+  private sanitizeHtml(html: string | string[], images: rss.Image[]): string {
+    if (html instanceof Array) {
+      html = html[0] || "";
+    }
+    const doc = parse5.parseFragment(html);
+    this.sanitizeElement(doc as parse5.DefaultTreeDocumentFragment, images);
+    return parse5.serialize(doc);
+  }
+
+  private sanitizeElement(element: any, images: rss.Image[]) {
+    if (element.attrs) {
+      const allowedAttributes: {[attr: string]: boolean} = {
+        alt: true,
+        height: true,
+        href: true,
+        rel: true,
+        src: true,
+        target: true,
+        title: true,
+        width: true,
+      };
+      element.attrs =
+          element.attrs.filter((attr: any) => allowedAttributes[attr.name]);
+    }
+
+    if (element.nodeName === "img" && element.attrs) {
+      element.attrs
+          .filter((attr: any) => attr.name === "src")
+          .forEach((src: any) => {
+            const image = this.imageFromUrl(src.value);
+            images.push(image);
+            src.value = image.localUrl;
+          });
+    }
+
+    if (element.childNodes) {
+      const allowedTags: {[tag: string]: boolean} = {
+        "#text": true,
+        "a": true,
+        "div": true,
+        "em": true,
+        "img": true,
+        "p": true,
+        "span": true,
+        "strong": true,
+      };
+      element.childNodes =
+          element.childNodes.filter((node: any) => allowedTags[node.nodeName]);
+      element.childNodes.map((node: any) => this.sanitizeElement(node, images));
+    }
   }
 
   /**
@@ -233,23 +299,22 @@ export default class Feed {
     return filteredItems.sort(compareDates);
   }
 
-  private async fetchImages(channel: rss.Channel) {
+  private async fetchImages(images: rss.Image[]) {
     await fsPromises.ensureDir(this.feedPath(Feed.PATH_IMAGES));
-    if (!channel.image) {
-      return;
-    }
 
-    const imageExists = await fsPromises
-        .stat(channel.image.localPath)
-        .then(() => true, () => false);
-    if (imageExists) {
-      return;
-    }
+    for (const image of images) {
+      const imageExists = await fsPromises
+          .stat(image.localPath)
+          .then(() => true, () => false);
+      if (imageExists) {
+        continue;
+      }
 
-    await download(
-        `${this.name} cover art`,
-        channel.image.remoteUrl,
-        channel.image.localPath);
+      await download(
+          `${this.name} artwork`,
+          image.remoteUrl,
+          image.localPath);
+    }
   }
 
   private async fetchAudio(channel: rss.Channel) {
@@ -330,7 +395,9 @@ export default class Feed {
 
     const itunesOwner = snapshot.rss.channel["itunes:owner"];
     let owner;
-    if (itunesOwner && itunesOwner["itunes:name"] && itunesOwner["itunes:email"]) {
+    if (itunesOwner &&
+        itunesOwner["itunes:name"] &&
+        itunesOwner["itunes:email"]) {
       owner = {
         email: itunesOwner["itunes:email"],
         name: itunesOwner["itunes:name"],
@@ -342,12 +409,7 @@ export default class Feed {
         (snapshot.rss.channel["itunes:image"] || {})["@_href"];
     let image;
     if (imageRemoteUrl) {
-      const localName = `${this.hash(imageRemoteUrl)}`;
-      image = {
-        localPath: this.feedPath(Feed.PATH_IMAGES, localName),
-        localUrl: `${this.localUrlBase}/${Feed.PATH_IMAGES}/${localName}`,
-        remoteUrl: he.decode(imageRemoteUrl),
-      };
+      image = this.imageFromUrl(imageRemoteUrl);
     }
     return {
       author: snapshot.rss.channel["itunes:author"],
@@ -364,6 +426,15 @@ export default class Feed {
     };
   }
 
+  private imageFromUrl(remoteUrl: string): rss.Image {
+    const localName = `${this.hash(remoteUrl)}`;
+    return {
+      localPath: this.feedPath(Feed.PATH_IMAGES, localName),
+      localUrl: `${this.localUrlBase}/${Feed.PATH_IMAGES}/${localName}`,
+      remoteUrl,
+    };
+  }
+
   /**
    * Returns a list of items that are provided by an Xml snapshot.
    */
@@ -374,8 +445,7 @@ export default class Feed {
       const guidHash = this.hash(guid);
       const localName = `${guidHash}${ext}`;
       return {
-        description: item.description,
-        descriptionHtml: item["content:encoded"],
+        description: item["content:encoded"] || item.description,
         enclosure: {
           length: item.enclosure["@_length"],
           localPath: this.feedPath(Feed.PATH_AUDIO, localName),
@@ -385,7 +455,6 @@ export default class Feed {
         },
         guid,
         guidHash,
-        hasDescriptionHtml: !!item["content:encoded"],
         link: item.link,
         pubDate: Date.parse(item.pubDate),
         pubDateAsString:
@@ -426,7 +495,8 @@ export default class Feed {
    * Returns all the (non pending download) files in a given directory.
    */
   private async filesUnder(root: string): Promise<string[]> {
-    const dirents = await fsPromises.readdir(root, {withFileTypes: true} as any);
+    const dirents = await fsPromises.readdir(
+        root, {withFileTypes: true} as any);
     return (dirents as unknown as fs.Dirent[])
         .filter((d) => d.isFile())
         .map((d) => d.name)

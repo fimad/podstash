@@ -1,6 +1,8 @@
 import * as fs from "fs";
-import { promises as fsPromises } from "fs";
+import * as fsPromises from "fs-extra";
 import * as request from "request";
+
+type DownloadPromise = Promise<number>;
 
 /**
  * Downloads a resource and writes it to the given path. The provided name is

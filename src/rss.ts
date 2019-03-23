@@ -13,21 +13,22 @@ export interface Item {
   title: string;
   link: string;
   description: string;
-  descriptionHtml?: string;
-  enclosure: Enclosure; hasDescriptionHtml?: boolean;
+  enclosure: Enclosure;
   guid: string;
   guidHash: string;
   pubDate: number;
   pubDateAsString: string;
 }
 
+export interface Image {
+  localPath: string;
+  localUrl: string;
+  remoteUrl: string;
+}
+
 export interface Channel {
   description: string;
-  image?: {
-    localPath: string;
-    localUrl: string;
-    remoteUrl: string;
-  };
+  image?: Image;
   items: Item[];
   language: string;
   lastBuildDate: number;
@@ -65,26 +66,23 @@ export function toXml(channel: Channel): string {
         "generator": "podstash",
         "googleplay:block": "yes",
         "item": channel.items.map((item) => ({
-          "content:encoded": {
-            __cdata: item.descriptionHtml,
-          },
-          "description": {
+          description: {
             __cdata: item.description,
           },
-          "enclosure": {
+          enclosure: {
             "@_length": item.enclosure.length,
             "@_type": item.enclosure.type,
             "@_url": item.enclosure.localUrl,
           },
-          "guid": {
+          guid: {
             "@_isPermaLink": "false",
             "__cdata": item.guid,
           },
-          "link": {
+          link: {
             __cdata: item.link,
           },
-          "pubDate": new Date(item.pubDate || 0).toUTCString(),
-          "title": {
+          pubDate: new Date(item.pubDate || 0).toUTCString(),
+          title: {
             __cdata: item.title,
           },
         })),
