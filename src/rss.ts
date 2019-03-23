@@ -1,4 +1,5 @@
 import * as xml from "fast-xml-parser";
+import * as he from "he";
 
 export interface Enclosure {
   remoteUrl: string;
@@ -43,9 +44,11 @@ export interface Channel {
 
 export function toXml(channel: Channel): string {
   const xmlOptions = {
+    attrValueProcessor: (a: string) => he.encode(a, {useNamedReferences: true}),
     cdataTagName: "__cdata",
     format: true,
     ignoreAttributes: false,
+    tagValueProcessor: (a: string) => he.encode(a, { useNamedReferences: true}),
   };
   const parser = new xml.j2xParser(xmlOptions);
   const feed = {
@@ -140,7 +143,9 @@ export function toXml(channel: Channel): string {
 
 export function fromXml(content: string): any {
   const xmlOptions = {
+    attrValueProcessor: (a: string) => he.decode(a, {isAttributeValue: true}),
     ignoreAttributes: false,
+    tagValueProcessor: (a: string) => he.decode(a),
   };
   return xml.parse(content.toString(), xmlOptions);
 }

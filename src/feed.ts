@@ -389,7 +389,7 @@ export default class Feed {
         link: item.link,
         pubDate: Date.parse(item.pubDate),
         pubDateAsString:
-            new Date(Date.parse(snapshot.rss.channel.pubDate)).toDateString(),
+            new Date(Date.parse(item.pubDate)).toDateString(),
         title: item.title,
       };
     });
