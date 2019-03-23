@@ -101,10 +101,11 @@ body {
   margin-bottom: 16px;
   color: black;
   display: grid;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: auto auto auto auto;
   grid-template-columns: auto 25%;
   grid-template-areas:
       "title       link"
+      "date        link"
       "description description"
       "audio       audio";
   background-color: #FFF;
@@ -116,6 +117,16 @@ body {
   font-size: 18px;
   font-weight: bold;
   background-color: #EEE;
+}
+
+.episode .date {
+  grid-area: date;
+  padding: 8px;
+  padding-top: 0px;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #EEE;
+  color: #555;
 }
 
 .episode .link {
@@ -172,6 +183,7 @@ body {
         {{#channel.items}}
         <div class="episode" id="{{guidHash}}">
           <div class="title">{{title}}</div>
+          <div class="date">{{pubDateAsString}}</div>
           <div class="link"><a href="#{{guidHash}}">&#128279;</a></div>
           <div class="description">
             {{description}}

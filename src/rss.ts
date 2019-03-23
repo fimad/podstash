@@ -17,6 +17,7 @@ export interface Item {
   guid: string;
   guidHash: string;
   pubDate: number;
+  pubDateAsString: string;
 }
 
 export interface Channel {
