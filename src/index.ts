@@ -69,14 +69,12 @@ function updateFeeds(opts: any) {
     try {
       const feeds = await archive.feeds();
       await Promise.all(feeds.map(async (feed) => {
-        console.log(`Updating ${feed.name}.`);
         try {
           await feed.update(justMp3s);
         } catch (e) {
           console.log(`Error encountered updating ${feed.name}:`, e);
         }
       }));
-      console.log(`Finished updating feeds.`);
     } catch (e) {
       console.log(`Error encountered updating feeds:`, e);
     }

@@ -323,16 +323,7 @@ export default class Feed {
     const items = await channel.items
         .filter((item) => !guids[this.hash(item.guid)]);
 
-    // When fetching multiple MP3 files, add a small delay between fetches so as
-    // to not appear to be overzealous in our fetching.
-    const smallDelay = async () =>
-        await new Promise((resolve) => setTimeout(resolve, 30000));
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (i > 0) {
-        await smallDelay();
-      }
+    for (const item of items) {
       await download(
         `${this.name} - ${item.title}`,
         item.enclosure.remoteUrl,
