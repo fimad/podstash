@@ -126,9 +126,7 @@ export default class Archive {
    * Generate the HTML interface for managed feeds.
    */
   public async updateHtml(): Promise<void> {
-    // nexe does not support the promise APIs. Read synchronously as a
-    // workaround instead.
-    const template = fs.readFileSync(Archive.TEMPLATE);
+    const template = await fsPromises.readFile(Archive.TEMPLATE);
     const feeds = await this.feeds();
     const feedsAndChannels: Array<[Feed, rss.Channel]> = await Promise.all(
       feeds.map(async (feed) =>
