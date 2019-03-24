@@ -44,7 +44,7 @@ function init(opts: any) {
   const archivePath: string = opts.archive;
   const baseUrl: string = opts["base-url"];
   Archive.create(archivePath, baseUrl, async (archive: Archive) => {
-    console.log(`Initialized podcast archive under ${archive}`);
+    console.log(`Initialized podcast archive under ${archivePath}`);
   });
 }
 
