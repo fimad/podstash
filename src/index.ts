@@ -17,12 +17,12 @@ const argv = yargs
   })
   .option("just-mp3", {
     describe: "Only update episode MP3 files",
-    type: 'boolean',
+    type: "boolean",
   })
   .option("download-delay", {
-    describe: "The delay in milliseconds between requests to the same host",
     default: 10000,
-    type: 'number',
+    describe: "The delay in milliseconds between requests to the same host",
+    type: "number",
   })
   .command(
     "init",
@@ -71,7 +71,7 @@ function addFeed(opts: any) {
 
 function updateFeeds(opts: any) {
   const archivePath: string = opts.archive;
-  const downloadDelay: number | undefined = opts['download-delay'];
+  const downloadDelay: number | undefined = opts["download-delay"];
   const justMp3s: boolean = !!opts["just-mp3"];
   if (downloadDelay !== undefined) {
     setDownloadDelay(downloadDelay);
