@@ -61,6 +61,7 @@ export default class Feed {
           () => {throw new Error((`Feed ${name} already exists`)); },
           () => null);
     await fsPromises.ensureDir(feedPath);
+    await fsPromises.ensureDir(path.join(feedPath, Feed.PATH_CONFIG));
     await fsPromises.writeFile(urlFile, url);
     return new Feed(db, name, url);
   }
@@ -71,10 +72,16 @@ export default class Feed {
   private static readonly PATH_AUDIO = "audio";
 
   /**
-   * The path relative to the archive root for the config file that stores the
+   * The path relative to the feed root for config files and directories.
+   */
+  private static readonly PATH_CONFIG = "config";
+
+  /**
+   * The path relative to the feed root for the config file that stores the
    * content of the tracked RSS feed URL.
    */
-  private static readonly PATH_FEED_URL = "feed.url";
+  private static readonly PATH_FEED_URL =
+      path.join(Feed.PATH_CONFIG, "feed.url");
 
   /**
    * The path to the directory containing locally cached images.

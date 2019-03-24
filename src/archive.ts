@@ -23,7 +23,7 @@ import * as rss from "./rss";
 export default class Archive {
 
   /**
-   * The path relative to the archive root for config directories.
+   * The path relative to the archive root for config files and directories.
    */
   public static readonly PATH_CONFIG = "config";
 
@@ -57,7 +57,8 @@ export default class Archive {
    * The path relative to the archive root for the config file that stores the
    * content of the base URL.
    */
-  private static readonly PATH_BASE_URL = "base.url";
+  private static readonly PATH_BASE_URL =
+      path.join(Archive.PATH_CONFIG, "base.url");
 
   /**
    * The path relative to the archive root for the generated index.html file.
@@ -75,6 +76,7 @@ export default class Archive {
       getBaseUrl: () => Promise<string>,
       withArchive: (archive: Archive) => Promise<any>) {
     await fsPromises.ensureDir(dbPath);
+    await fsPromises.ensureDir(path.join(dbPath, Archive.PATH_CONFIG));
     await fsPromises.stat(dbPath);
 
     let release;
