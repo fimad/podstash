@@ -125,7 +125,9 @@ export default class Feed {
    */
   public async updateHtml(channel?: rss.Channel): Promise<void> {
     channel = channel || await this.generatedChannel();
-    const template = await fsPromises.readFile(Feed.TEMPLATE);
+    const template = await fsPromises
+        .readFile(this.db.dbPath(Archive.PATH_CONFIG, Feed.TEMPLATE))
+        .catch((e) => fsPromises.readFile(Feed.TEMPLATE));
     const view = {
       ...this.baseMustacheView(),
       channel,

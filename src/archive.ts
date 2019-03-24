@@ -22,6 +22,11 @@ import * as rss from "./rss";
  */
 export default class Archive {
 
+  /**
+   * The path relative to the archive root for config directories.
+   */
+  public static readonly PATH_CONFIG = "config";
+
   /** Loads an archive from disk. */
   public static async load(
       dbPath: string,
@@ -71,18 +76,20 @@ export default class Archive {
       withArchive: (archive: Archive) => Promise<any>) {
     await fsPromises.ensureDir(dbPath);
     await fsPromises.stat(dbPath);
+
+    let release;
     try {
-      const release = await lockfile.lock(dbPath);
-      try {
-        const baseUrl = await getBaseUrl();
-        await withArchive(new Archive(dbPath, baseUrl.toString()));
-      } finally {
-        await release();
-      }
+      release = await lockfile.lock(dbPath);
     } catch (e) {
       console.log("Unable to acquire lock on archive.");
       console.log("Is another instance running?");
       throw(e);
+    }
+    try {
+      const baseUrl = await getBaseUrl();
+      await withArchive(new Archive(dbPath, baseUrl.toString()));
+    } finally {
+      await release();
     }
   }
 
@@ -108,6 +115,7 @@ export default class Archive {
     return ((fsPromises.readdir as any)(this.path, {withFileTypes: true}))
         .then((dirents: fs.Dirent[]) => Promise.all(dirents
             .filter((d) => d.isDirectory())
+            .filter((d) => d.name !== "config")
             .sort()
             .map((d) => Feed.load(this, d.name))));
   }
@@ -119,6 +127,9 @@ export default class Archive {
    * RSS feed URL to be tracked.
    */
   public newFeed(name: string, url: string): Promise<Feed> {
+    if (name === "config") {
+      throw new Error('The name "config" is reserved.');
+    }
     return Feed.create(this, name, url);
   }
 
@@ -126,7 +137,9 @@ export default class Archive {
    * Generate the HTML interface for managed feeds.
    */
   public async updateHtml(): Promise<void> {
-    const template = await fsPromises.readFile(Archive.TEMPLATE);
+    const template = await fsPromises
+        .readFile(this.dbPath(Archive.PATH_CONFIG, Archive.TEMPLATE))
+        .catch((e) => fsPromises.readFile(Archive.TEMPLATE));
     const feeds = await this.feeds();
     const feedsAndChannels: Array<[Feed, rss.Channel]> = await Promise.all(
       feeds.map(async (feed) =>
@@ -155,7 +168,7 @@ export default class Archive {
     };
   }
 
-  private dbPath(...subDirs: string[]) {
+  public dbPath(...subDirs: string[]) {
     return path.join(this.path, ...subDirs);
   }
 }
