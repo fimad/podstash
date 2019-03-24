@@ -1,21 +1,28 @@
 import yargs from "yargs";
 import Archive from "./archive";
+import { setDownloadDelay } from "./dl";
 
 const argv = yargs
   .option("archive", {
-    describe: "the path to the archive directory",
+    describe: "The path to the archive directory",
   })
   .option("base-url", {
-    describe: "the base URL underwhich the archive directory is available",
+    describe: "The base URL underwhich the archive directory is available",
   })
   .option("feed-name", {
-    describe: "the name of the feed",
+    describe: "The name of the feed",
   })
   .option("feed-url", {
-    describe: "the URL of the RSS/XML feed",
+    describe: "The URL of the RSS/XML feed",
   })
   .option("just-mp3", {
-    describe: "only update episode MP3 files",
+    describe: "Only update episode MP3 files",
+    type: 'boolean',
+  })
+  .option("download-delay", {
+    describe: "The delay in milliseconds between requests to the same host",
+    default: 10000,
+    type: 'number',
   })
   .command(
     "init",
@@ -64,7 +71,11 @@ function addFeed(opts: any) {
 
 function updateFeeds(opts: any) {
   const archivePath: string = opts.archive;
+  const downloadDelay: number | undefined = opts['download-delay'];
   const justMp3s: boolean = !!opts["just-mp3"];
+  if (downloadDelay !== undefined) {
+    setDownloadDelay(downloadDelay);
+  }
   Archive.load(archivePath, async (archive: Archive) => {
     try {
       const feeds = await archive.feeds();

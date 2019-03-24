@@ -1,8 +1,8 @@
 podstash
 ========
 
-Have you ever lost a ~~loved one~~ podcast? Perhaps the author decided to stop
-got bored or decided to stop paying for hosting.
+Have you ever lost a podcast? Perhaps the author decided to stop paying for
+hosting.
 
 Have you ever wanted to go back and listen to the first episode of a podcast
 only to realize that the feed only contains the last 100 or even 50 episodes?
@@ -53,7 +53,7 @@ a new archive with the `podstash init` command.
 podstash init --archive ./path/to/archive --base-url http://example.com
 ```
 
-Podstash expects that your archive is exposed over HTTP, the URL that
+Podstash expects that your archive is exposed over HTTP. The URL that
 corresponds to this is given in `--base-url`. If you haven't set up an HTTP
 server, no worries, you can provide a made up value now and change it later.
 
@@ -73,7 +73,7 @@ The name of the feed must be a unique and file system safe directory name.
 ### Update Your Archive
 
 The `podstash update` command directs podstash to fetch new RSS snapshots,
-download, audio files, and regenerate your mirrored RSS feed.
+download audio files, and regenerate your mirrored RSS feed.
 
 ```shell
 podstash update --archive ./path/to/archive

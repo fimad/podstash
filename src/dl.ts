@@ -12,7 +12,11 @@ type DownloadPromise = Promise<number>;
  * The amount of time to delay between successive download requests to the same
  * host.
  */
-const delayBetweenDownloads = 10000;
+let delayBetweenDownloads = 10000;
+
+export function setDownloadDelay(newDelay: number) {
+  delayBetweenDownloads = newDelay;
+}
 
 /**
  * A mapping from hosts to the latest download request for that host.
