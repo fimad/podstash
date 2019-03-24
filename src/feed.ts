@@ -149,7 +149,11 @@ export default class Feed {
    */
   public async update(justMp3s = false) {
     if (!justMp3s) {
-      await this.fetchSnapshot();
+      try {
+        await this.fetchSnapshot();
+      } catch (e) {
+        console.log(`Unable to fetch RSS feed for ${this.name}: ${e}`);
+      }
     }
     const images: rss.Image[] = [];
     const channel = await this.generatedChannel(images);

@@ -49,7 +49,7 @@ export function toXml(channel: Channel): string {
     cdataTagName: "__cdata",
     format: true,
     ignoreAttributes: false,
-    tagValueProcessor: (a: string) => he.encode(a, { useNamedReferences: true}),
+    tagValueProcessor: (a: string) => he.encode(a, {useNamedReferences: true}),
   };
   const parser = new xml.j2xParser(xmlOptions);
   const feed = {
@@ -75,28 +75,18 @@ export function toXml(channel: Channel): string {
             "@_url": item.enclosure.localUrl,
           },
           guid: {
+            "#text": item.guid,
             "@_isPermaLink": "false",
-            "__cdata": item.guid,
           },
-          link: {
-            __cdata: item.link,
-          },
+          link: item.link,
           pubDate: new Date(item.pubDate || 0).toUTCString(),
-          title: {
-            __cdata: item.title,
-          },
+          title: item.title,
         })),
         "itunes:block": "Yes",
-        "language": {
-          __cdata: channel.language,
-        },
+        "language": channel.language,
         "lastBuildDate": new Date(Date.now()).toUTCString(),
-        "link": {
-          __cdata: channel.link,
-        },
-        "title": {
-          __cdata: channel.title,
-        },
+        "link": channel.link,
+        "title": channel.title,
       },
     },
   };
@@ -109,9 +99,9 @@ export function toXml(channel: Channel): string {
   if (channel.image) {
     addToChannel({
       "image": {
-        link: {__cdata: channel.link},
-        title: {__cdata: channel.title},
-        url: {__cdata: channel.image.localUrl},
+        link: channel.link,
+        title: channel.title,
+        url: channel.image.localUrl,
       },
       "itunes:image": {
         "@_href": channel.image.localUrl,
@@ -121,19 +111,19 @@ export function toXml(channel: Channel): string {
   if (channel.owner) {
     addToChannel({
       "itunes:owner": {
-        "itunes:email": {__cdata: channel.owner.email},
-        "itunes:name": {__cdata: channel.owner.name},
+        "itunes:email": channel.owner.email,
+        "itunes:name": channel.owner.name,
       },
     });
   }
   if (channel.author) {
     addToChannel({
-      "itunes:author": {__cdata: channel.author},
+      "itunes:author": channel.author,
     });
   }
   if (channel.copyright) {
     addToChannel({
-      copyright: {__cdata: channel.copyright},
+      copyright: channel.copyright,
     });
   }
   return '<?xml version="1.0" encoding="UTF-8"?>\n' + parser.parse(feed);
