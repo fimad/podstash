@@ -5,6 +5,7 @@ import * as he from "he";
 import Mustache from "mustache";
 import * as parse5 from "parse5";
 import * as path from "path";
+import * as url from "url";
 import Archive from "./archive";
 import download from "./dl";
 import * as rss from "./rss";
@@ -46,14 +47,14 @@ export default class Feed {
 
   /** Loads a feed from disk. */
   public static async load(db: Archive, name: string): Promise<Feed> {
-    const url = await
+    const feedUrl = await
         fsPromises.readFile(path.join(db.path, name, Feed.PATH_FEED_URL));
-    return new Feed(db, name, url.toString());
+    return new Feed(db, name, feedUrl.toString());
   }
 
   /** Creates a new feed in the archive that tracks a given URL. */
   public static async create(
-      db: Archive, name: string, url: string): Promise<Feed> {
+      db: Archive, name: string, feedUrl: string): Promise<Feed> {
     const feedPath = path.join(db.path, name);
     const urlFile = path.join(db.path, name, Feed.PATH_FEED_URL);
     await fsPromises.stat(feedPath)
@@ -62,8 +63,8 @@ export default class Feed {
           () => null);
     await fsPromises.ensureDir(feedPath);
     await fsPromises.ensureDir(path.join(feedPath, Feed.PATH_CONFIG));
-    await fsPromises.writeFile(urlFile, url);
-    return new Feed(db, name, url);
+    await fsPromises.writeFile(urlFile, feedUrl);
+    return new Feed(db, name, feedUrl);
   }
 
   /**
@@ -119,10 +120,10 @@ export default class Feed {
   /** The URL that points to the root of this feed's directory. */
   private readonly localUrlBase: string;
 
-  constructor(db: Archive, name: string, url: string) {
+  constructor(db: Archive, name: string, feedUrl: string) {
     this.db = db;
     this.name = name;
-    this.url = url;
+    this.url = feedUrl;
     this.localUrlBase = `${db.baseUrl}/${this.name}`;
     this.localUrl = `${this.localUrlBase}/${Feed.PATH_RSS}`;
   }
@@ -442,7 +443,8 @@ export default class Feed {
    */
   private itemsFromSnapshot(snapshot: XmlSnapshot): rss.Item[] {
     return (snapshot.rss.channel.item || []).map((item: any) => {
-      const ext = path.extname(item.enclosure["@_url"]);
+      const ext = path.extname(new url.URL(item.enclosure["@_url"]).pathname) ||
+                 ".mp3";
       const guid = item.guid["#text"] || item.guid;
       const guidHash = this.hash(guid);
       const localName = `${guidHash}${ext}`;
