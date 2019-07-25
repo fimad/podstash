@@ -193,7 +193,7 @@ export default class Feed {
     if (html instanceof Array) {
       html = html[0] || "";
     }
-    const doc = parse5.parseFragment(html);
+    const doc = parse5.parseFragment(html || "");
     this.sanitizeElement(doc as parse5.DefaultTreeDocumentFragment, images);
     return parse5.serialize(doc);
   }
