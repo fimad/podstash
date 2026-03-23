@@ -442,7 +442,7 @@ export default class Feed {
    * Returns a list of items that are provided by an Xml snapshot.
    */
   private itemsFromSnapshot(snapshot: XmlSnapshot): rss.Item[] {
-    return (snapshot.rss.channel.item || []).map((item: any) => {
+    return (snapshot.rss.channel.item || []).filter((item: any) => !!item.enclosure).map((item: any) => {
       const ext = path.extname(new url.URL(item.enclosure["@_url"]).pathname) ||
                  ".mp3";
       const guid = item.guid["#text"] || item.guid;
@@ -481,7 +481,12 @@ export default class Feed {
    * feeds.
    */
   private async xmlSnapshots(): Promise<XmlSnapshot[]> {
-    return (await this.rawSnapshots()).map(rss.fromXml);
+    return (await this.rawSnapshots()).map((s) => {
+      try {
+        return rss.fromXml(s);
+      } catch (e) {
+        return null;
+      }}).filter((s) => !!s);
   }
 
   /**
